@@ -8,3 +8,6 @@
 out
 gen
 .idea/vcs.xml
+
+#config file
+.config
