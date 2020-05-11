@@ -12,6 +12,8 @@ configparser.read('.config')
 api_token = configparser.get('dropbox', 'api_token')
 upload_loc = configparser.get('dropbox', 'upload_loc')
 move_loc = configparser.get('dropbox', 'move_loc')
+
+
 dbx = dropbox.Dropbox(api_token)
 
 
@@ -73,7 +75,7 @@ def upload_to_dropbox():
     # checking status
     print(dbx.users_get_current_account())
 
-    filelist = get_file_names_to_move(upload_loc)
+    filelist = get_file_names_to_move(ebs_fm)
     print(filelist)
     # need to no duplicate folder name
     for x in filelist:
@@ -95,7 +97,7 @@ def upload_to_dropbox():
 # def recording(var_date_str, var_program_name, var_record_mins):
 def recording():
 
-    radio_addr = "rtmp://ebsandroid.ebs.co.kr/fmradiofamilypc/familypc1m"
+    radio_addr = radio_address
 
     ori_file = '~/' + date_str + '_' + program_name
     m4a_file = '~/' + date_str + '_' + program_name + '.m4a'
@@ -123,6 +125,9 @@ if __name__ == "__main__":
     argparser.add_argument('program_name', type=str, default=date_str+"_english_radio",
                            help="What is the ebs radio program name?")
 
+    argparser.add_argument('radio_channel', type=str, default="ebs_fm",
+                           help="Which channel do you want to record?")
+
     argparser.add_argument('duration', type=int, default=20,
                            help="What is the second number?")
 
@@ -130,6 +135,9 @@ if __name__ == "__main__":
 
     program_name = args.program_name
     record_mins = args.duration
+    radio_address = configparser.get('dropbox', args.radio_channel)
+
+
 
     recording()
     upload_to_dropbox()
