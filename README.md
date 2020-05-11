@@ -16,11 +16,12 @@ Cannot uninstall 'certifi'.
 It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall.  
 I don't know why this happens.
 But When I skip this certifi(remove certifi==2020.4.5.1), All are happy
-todo --> whey this problem happens
+todo --> why this problem happens
 #radio address
 I find there are two channel for engligh lecture.  
 I find it by googling it in the blog.
 But actually, I need to find how to get address 
+And ebse channel seems to vido data.
 #cron setting
 ## need to change python, ~/recoding_by_shell.py to proper position
 50 05 * * 1-6 python ~/recoding_by_shell.py british_eng ebs_fm 590

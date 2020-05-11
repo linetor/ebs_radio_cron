@@ -12,6 +12,7 @@ configparser.read('.config')
 api_token = configparser.get('dropbox', 'api_token')
 upload_loc = configparser.get('dropbox', 'upload_loc')
 move_loc = configparser.get('dropbox', 'move_loc')
+current_loc = configparser.get('current_loc', 'current_loc')
 
 
 dbx = dropbox.Dropbox(api_token)
@@ -75,7 +76,7 @@ def upload_to_dropbox():
     # checking status
     print(dbx.users_get_current_account())
 
-    filelist = get_file_names_to_move(ebs_fm)
+    filelist = get_file_names_to_move(upload_loc)
     print(filelist)
     # need to no duplicate folder name
     for x in filelist:
@@ -86,11 +87,11 @@ def upload_to_dropbox():
 
     m4a_file = date_str + '_' + program_name + '.m4a'
 
-    with open("~/"+m4a_file, 'rb') as f:
+    with open(current_loc+m4a_file, 'rb') as f:
         dbx.files_upload(f.read(), upload_loc+'/' + m4a_file, mode=dropbox.files.WriteMode.overwrite)
 
     import os
-    os.system("rm ~/"+m4a_file)
+    os.system("rm "+current_loc+m4a_file)
 
 
 # checking : In main, variable is used for global variable
@@ -99,8 +100,8 @@ def recording():
 
     radio_addr = radio_address
 
-    ori_file = '~/' + date_str + '_' + program_name
-    m4a_file = '~/' + date_str + '_' + program_name + '.m4a'
+    ori_file = current_loc + date_str + '_' + program_name
+    m4a_file = current_loc + date_str + '_' + program_name + '.m4a'
 
     rtmpdump = ['rtmpdump', '-r', radio_addr, '-B', record_mins, '-o', ori_file]
     ffmpeg = ['ffmpeg', '-i', ori_file, '-vn', '-acodec', 'copy', m4a_file]
