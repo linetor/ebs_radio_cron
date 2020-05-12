@@ -40,4 +40,8 @@ And ebse channel seems to vido data.
 50 06 * * 1-6 python ~/recoding_by_shell.py english_allinone ebse 590
 00 07 * * 1-6 python ~/recoding_by_shell.py english_news ebse 1190
 20 07 * * 1-6 python ~/recoding_by_shell.py common_english ebse 1790
+#cron error
+I don't know why this happen. It say mail server not setted.  
+error log : No MTA installed, discarding output
+source : https://seogwipo.tistory.com/entry/%EC%9A%B0%EB%B6%84%ED%88%AC1804-crontab-No-MTA-installed-discarding-output-%EC%97%90%EB%9F%AC-%ED%95%B4%EA%B2%B0
 
