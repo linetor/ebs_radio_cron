@@ -35,7 +35,7 @@ def move_and_wait_until_complete(reloc_paths):
     print("Executing with jobid({})".format(jobid))
     print("Checking status: ")
     while 1:
-        status = dbx.files_move_batch(jobid)
+        status = dbx.files_move_batch_check(jobid)
         if not (status.is_complete() or status.is_failed()):
             sys.stdout.write("...")
             sys.stdout.flush()
@@ -135,8 +135,8 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     program_name = args.program_name
-    record_mins = args.duration
-    radio_address = configparser.get('dropbox', args.radio_channel)
+    record_mins = str(args.duration)
+    radio_address = configparser.get('ebs_address', args.radio_channel)
 
 
 
