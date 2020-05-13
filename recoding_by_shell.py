@@ -7,15 +7,7 @@ from configparser import ConfigParser
 import time
 
 # Is it need to be here ??
-configparser = ConfigParser()
-configparser.read('.config')
-api_token = configparser.get('dropbox', 'api_token')
-upload_loc = configparser.get('dropbox', 'upload_loc')
-move_loc = configparser.get('dropbox', 'move_loc')
-#current_loc = configparser.get('current_loc', 'current_loc')
-
-
-dbx = dropbox.Dropbox(api_token)
+# current_loc = configparser.get('current_loc', 'current_loc')
 
 
 def move_and_wait_until_complete(reloc_paths):
@@ -135,15 +127,20 @@ if __name__ == "__main__":
     argparser.add_argument('current_loc', type=str, default="~/",
                            help="What is the current folder")
 
-
     args = argparser.parse_args()
 
     current_loc = args.current_loc
     program_name = args.program_name
     record_mins = str(args.duration)
+
+    configparser = ConfigParser()
+    configparser.read(current_loc+'.config')
+    api_token = configparser.get('dropbox', 'api_token')
+    upload_loc = configparser.get('dropbox', 'upload_loc')
+    move_loc = configparser.get('dropbox', 'move_loc')
+
     radio_address = configparser.get('ebs_address', args.radio_channel)
 
-
-
+    dbx = dropbox.Dropbox(api_token)
     recording()
     upload_to_dropbox()
