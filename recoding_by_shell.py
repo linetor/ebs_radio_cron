@@ -12,7 +12,7 @@ configparser.read('.config')
 api_token = configparser.get('dropbox', 'api_token')
 upload_loc = configparser.get('dropbox', 'upload_loc')
 move_loc = configparser.get('dropbox', 'move_loc')
-current_loc = configparser.get('current_loc', 'current_loc')
+#current_loc = configparser.get('current_loc', 'current_loc')
 
 
 dbx = dropbox.Dropbox(api_token)
@@ -132,8 +132,13 @@ if __name__ == "__main__":
     argparser.add_argument('duration', type=int, default=20,
                            help="What is the second number?")
 
+    argparser.add_argument('current_loc', type="~/", default=20,
+                           help="What is the current folder")
+
+
     args = argparser.parse_args()
 
+    current_loc = args.current_loc
     program_name = args.program_name
     record_mins = str(args.duration)
     radio_address = configparser.get('ebs_address', args.radio_channel)
