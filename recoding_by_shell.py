@@ -132,7 +132,7 @@ if __name__ == "__main__":
     argparser.add_argument('duration', type=int, default=20,
                            help="What is the second number?")
 
-    argparser.add_argument('current_loc', type="~/", default=20,
+    argparser.add_argument('current_loc', type=str, default="~/",
                            help="What is the current folder")
 
 
