@@ -57,7 +57,7 @@ def get_file_names_to_move(from_folder):
     return files
     """
     continuing_list = dbx.files_list_folder(from_folder)
-    files = [_file.path_lower for _file in continuing_list.entries if date_str not in _file]
+    files = [_file.path_lower for _file in continuing_list.entries if date_str not in _file.name]
     if continuing_list.has_more:
         files.extend(get_file_names_to_move(continuing_list.cursor))
     return files
