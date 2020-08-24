@@ -62,6 +62,15 @@ def get_file_names_to_move(from_folder):
         files.extend(get_file_names_to_move(continuing_list.cursor))
     return files
 
+def get_file_names_to_2weekago(from_folder):
+    continuing_list = dbx.files_list_folder(from_folder)
+    days_14_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
+    days_14_ago_str = days_14_ago.strftime("%Y-%m-%d")
+    files = [_file.path_lower for _file in continuing_list.entries if days_14_ago_str > _file.name]
+    if continuing_list.has_more:
+        files.extend(get_file_names_to_move(continuing_list.cursor))
+    return files
+
 
 def upload_to_dropbox():
 
@@ -83,7 +92,16 @@ def upload_to_dropbox():
         dbx.files_upload(f.read(), upload_loc+'/' + m4a_file, mode=dropbox.files.WriteMode.overwrite)
 
     import os
-    os.system("rm "+current_loc+m4a_file)
+    os.system("mkdir "+current_loc+"past/"+date_str)
+    os.system("mv "+current_loc+m4a_file + " " +current_loc+"past/"+date_str+"/"+m4a_file)
+
+
+    delete_filelist = get_file_names_to_2weekago(move_loc)
+
+    print(delete_filelist)
+    for path in delete_filelist:
+        dbx.files_delete(path)
+
 
 
 # checking : In main, variable is used for global variable
@@ -126,6 +144,7 @@ if __name__ == "__main__":
 
     argparser.add_argument('current_loc', type=str, default="~/",
                            help="What is the current folder")
+
 
     args = argparser.parse_args()
 
