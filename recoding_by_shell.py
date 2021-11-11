@@ -43,7 +43,7 @@ def move_and_wait_until_complete(reloc_paths):
         break
 
 
-def get_file_names_to_move(from_folder):
+def get_file_names_to_move(from_folder,date_str):
     # original code
     """
     if cursor is not None:
@@ -59,7 +59,7 @@ def get_file_names_to_move(from_folder):
     continuing_list = dbx.files_list_folder(from_folder)
     files = [_file.path_lower for _file in continuing_list.entries if date_str[:10] not in _file.name]
     if continuing_list.has_more:
-        files.extend(get_file_names_to_move(continuing_list.cursor))
+        files.extend(get_file_names_to_move(continuing_list.cursor,date_str))
     return files
 
 def get_file_names_to_2weekago(from_folder):
@@ -68,16 +68,16 @@ def get_file_names_to_2weekago(from_folder):
     days_14_ago_str = days_14_ago.strftime("%Y-%m-%d")
     files = [_file.path_lower for _file in continuing_list.entries if days_14_ago_str > _file.name]
     if continuing_list.has_more:
-        files.extend(get_file_names_to_move(continuing_list.cursor))
+        files.extend(get_file_names_to_move(continuing_list.cursor,date_str))
     return files
 
 
-def upload_to_dropbox():
+def upload_to_dropbox(dbx,upload_loc,date_str,move_loc,program_name):
 
     # checking status
     print(dbx.users_get_current_account())
 
-    filelist = get_file_names_to_move(upload_loc)
+    filelist = get_file_names_to_move(upload_loc,date_str)
     print(filelist)
     # need to no duplicate folder name
     for x in filelist:
@@ -162,4 +162,4 @@ if __name__ == "__main__":
 
     dbx = dropbox.Dropbox(api_token)
     recording()
-    upload_to_dropbox()
+    upload_to_dropbox(dbx,upload_loc,date_str,move_loc,program_name)
