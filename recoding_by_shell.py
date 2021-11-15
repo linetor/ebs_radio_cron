@@ -73,7 +73,7 @@ def get_file_names_to_2weekago(from_folder, dbx_variable, date_str_variable):
     return files
 
 
-def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_var, program_name_var):
+def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_var, program_name_var,current_loc_var):
     # checking status
     print(dbx_variable.users_get_current_account())
 
@@ -88,12 +88,12 @@ def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_
 
     m4a_file = date_str_variable + '_' + program_name_var + '.m4a'
 
-    with open(current_loc + m4a_file, 'rb') as f:
+    with open(current_loc_var + m4a_file, 'rb') as f:
         dbx_variable.files_upload(f.read(), upload_loc_var + '/' + m4a_file, mode=dropbox.files.WriteMode.overwrite)
 
     import os
-    os.system("mkdir " + current_loc + "past/" + date_str_variable)
-    os.system("mv " + current_loc + m4a_file + " " + current_loc + "past/" + date_str_variable + "/" + m4a_file)
+    os.system("mkdir " + current_loc_var + "past/" + date_str_variable)
+    os.system("mv " + current_loc_var + m4a_file + " " + current_loc_var + "past/" + date_str_variable + "/" + m4a_file)
 
     delete_filelist = get_file_names_to_2weekago(move_loc_var, dbx_variable, date_str_variable)
 
@@ -104,11 +104,11 @@ def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_
 
 # checking : In main, variable is used for global variable
 # def recording(var_date_str, var_program_name, var_record_mins):
-def recording(date_str_variable):
+def recording(date_str_variable,current_loc_var):
     radio_addr = radio_address
 
-    ori_file = current_loc + date_str_variable + '_' + program_name
-    m4a_file = current_loc + date_str_variable + '_' + program_name + '.m4a'
+    ori_file = current_loc_var + date_str_variable + '_' + program_name
+    m4a_file = current_loc_var + date_str_variable + '_' + program_name + '.m4a'
 
     rtmpdump = ['rtmpdump', '-r', radio_addr, '-B', record_mins, '-o', ori_file]
     ffmpeg = ['ffmpeg', '-i', ori_file, '-vn', '-acodec', 'copy', m4a_file]
@@ -156,5 +156,5 @@ if __name__ == "__main__":
     radio_address = configparser.get('ebs_address', args.radio_channel)
 
     dbx = dropbox.Dropbox(api_token)
-    recording(date_str)
-    upload_to_dropbox(dbx, upload_loc, date_str, move_loc, program_name)
+    recording(date_str,current_loc)
+    upload_to_dropbox(dbx, upload_loc, date_str, move_loc, program_name,current_loc)
