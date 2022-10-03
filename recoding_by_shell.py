@@ -86,14 +86,14 @@ def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_
     print(relocation_paths)
     move_and_wait_until_complete(relocation_paths, dbx_variable)
 
-    m4a_file = date_str_variable + '_' + program_name_var + '.m4a'
+    mp3_file = date_str_variable + '_' + program_name_var + '.mp3'
 
-    with open(current_loc_var + m4a_file, 'rb') as f:
-        dbx_variable.files_upload(f.read(), upload_loc_var + '/' + m4a_file, mode=dropbox.files.WriteMode.overwrite)
+    with open(current_loc_var + mp3_file, 'rb') as f:
+        dbx_variable.files_upload(f.read(), upload_loc_var + '/' + mp3_file, mode=dropbox.files.WriteMode.overwrite)
 
     import os
     os.system("mkdir " + current_loc_var + "past/" + date_str_variable)
-    os.system("mv " + current_loc_var + m4a_file + " " + current_loc_var + "past/" + date_str_variable + "/" + m4a_file)
+    os.system("mv " + current_loc_var + mp3_file + " " + current_loc_var + "past/" + date_str_variable + "/" + mp3_file)
 
     delete_filelist = get_file_names_to_2weekago(move_loc_var, dbx_variable, date_str_variable)
 
@@ -108,10 +108,10 @@ def recording(date_str_variable,current_loc_var):
     radio_addr = radio_address
 
     ori_file = current_loc_var + date_str_variable + '_' + program_name
-    m4a_file = current_loc_var + date_str_variable + '_' + program_name + '.m4a'
+    mp3_file = current_loc_var + date_str_variable + '_' + program_name + '.mp3'
 
     rtmpdump = ['rtmpdump', '-r', radio_addr, '-B', record_mins, '-o', ori_file]
-    ffmpeg = ['ffmpeg', '-i', ori_file, '-vn', '-acodec', 'copy', m4a_file]
+    ffmpeg = ['ffmpeg', '-i', ori_file, '-vn', '-acodec', 'copy', mp3_file]
     rm = ['rm', '-rf', ori_file]
 
     p = subprocess.Popen(rtmpdump)
