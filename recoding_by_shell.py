@@ -7,8 +7,6 @@ from configparser import ConfigParser
 import time
 
 
-# Is it need to be here ??
-# current_loc = configparser.get('current_loc', 'current_loc')
 
 
 def move_and_wait_until_complete(reloc_paths, dbx_variable):
