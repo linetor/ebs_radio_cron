@@ -11,3 +11,8 @@ gen
 
 #config file
 .config
+
+#binary file
+*.mp3
+__pycache__/recoding_by_shell.cpython-311.pyc
+
