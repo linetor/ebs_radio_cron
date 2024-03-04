@@ -5,9 +5,14 @@ import dropbox
 import sys
 from configparser import ConfigParser
 import time
+import logging
 
-
-
+logger = logging.getLogger(name='ebs recording')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('|%(asctime)s||%(name)s||%(levelname)s|\n%(message)s',datefmt='%Y-%m-%d %H:%M:%S') 
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler) 
 
 def move_and_wait_until_complete(reloc_paths, dbx_variable):
     if len(reloc_paths) == 0:
@@ -99,12 +104,27 @@ def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_
     for path in delete_filelist:
         dbx_variable.files_delete(path)
 
+import requests
+import os
+def get_vault_configuration():
+    vault_addr = os.environ.get("VAULT_ADDR")
+    vault_token = os.environ.get("VAULT_TOKEN")
+    endpoint = f"{vault_addr}/v1/kv/data/ebs_radio"
 
-# checking : In main, variable is used for global variable
-# def recording(var_date_str, var_program_name, var_record_mins):
-def recording(date_str_variable,current_loc_var):
-    radio_addr = radio_address
+    # HTTP GET 요청을 통해 데이터를 가져옵니다.
+    headers = {"X-Vault-Token": vault_token}
+    response = requests.get(endpoint, headers=headers)
 
+    if response.status_code == 200:
+        data = response.json()
+        return data
+    else:
+        # 에러 응답의 경우 예외를 발생시킵니다.
+        response.raise_for_status()
+
+def recording(date_str_variable):
+    
+    """
     ori_file = current_loc_var + date_str_variable + '_' + program_name
     mp3_file = current_loc_var + date_str_variable + '_' + program_name + '.mp3'
 
@@ -118,18 +138,35 @@ def recording(date_str_variable,current_loc_var):
     p.communicate()
     p = subprocess.Popen(rm)
     p.communicate()
+    """
 
 
 if __name__ == "__main__":
+    #airflow에서 지정된 시간에 trigger 됨
+    #지정된 시간에 time ex) 07:40 에 시작 --> 입력 parameter : 2024-03-01_07:40
+    #vault 에서 현재 시간(0740)으로 시간을 받아서 라디오 명(power_english)을 받아서 라디오 녹음 시작 --> recording function
+    #라디오 녹음 완료 시, dropbox로 update
+    #dropbox 저장장소 확인 후 2주전 데이터 삭제
+    #update 완료시 현재 경로의 파일 삭제 후, 저장 장소(odroid)에 이동
+
+    date = datetime.datetime.now()
+    date_str = date.strftime('%Y-%m-%d_%H:%M')
+
+    logger.info("ebs recording start")
+
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('start_time_str', type=str, default=date_str,
+                            help="trigger time ")
+    args = arg_parser.parse_args()
+    recording(date_str)
+
+
+    """
     date = datetime.datetime.now()
 
     date_str = date.strftime('%Y-%m-%d_%H:%M')
 
     argparser = argparse.ArgumentParser()
-
-    argparser.add_argument('program_name', type=str, default=date_str + "_english_radio",
-                           help="What is the ebs radio program name?")
-
     argparser.add_argument('radio_channel', type=str, default="ebs_fm",
                            help="Which channel do you want to record?")
 
@@ -156,3 +193,4 @@ if __name__ == "__main__":
     dbx = dropbox.Dropbox(api_token)
     recording(date_str,current_loc)
     upload_to_dropbox(dbx, upload_loc, date_str, move_loc, program_name,current_loc)
+    """
