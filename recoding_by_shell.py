@@ -12,104 +12,37 @@ logger.setLevel(logging.INFO)
 formatter = logging.Formatter('|%(asctime)s||%(name)s||%(levelname)s|\n%(message)s',datefmt='%Y-%m-%d %H:%M:%S') 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler) 
-
-def move_and_wait_until_complete(reloc_paths, dbx_variable):
-    if len(reloc_paths) == 0:
-        print("Nothing to move")
-        return
-
-    print("{} files to move...".format(len(reloc_paths)))
-    # files_move_batch is deprecated and need to change to move_batch.
-    # but there is no move_batch api?
-    job_status = dbx_variable.files_move_batch(reloc_paths, autorename=True)
-    if not job_status.is_async_job_id():
-        print("Job already complete!")
-        return
-    jobid = job_status.get_async_job_id()
-    print("Executing with jobid({})".format(jobid))
-    print("Checking status: ")
-    while 1:
-        status = dbx_variable.files_move_batch_check(jobid)
-        if not (status.is_complete() or status.is_failed()):
-            sys.stdout.write("...")
-            sys.stdout.flush()
-            time.sleep(1)
-            continue
-
-        if status.is_complete():
-            print("\nJob id ({}) complete".format(jobid))
-            print("{} files moved".format(len(reloc_paths)))
-        else:
-            print("\nJob id ({}) failed".format(jobid))
-            print(status.get_failed())
-        break
+logger.addHandler(stream_handler)
 
 
-def get_file_names_to_move(from_folder, date_str_variable, dbx_variable):
-    # original code
-    """
-    if cursor is not None:
-        continuing_list = dbx.files_list_folder_continue(cursor)
-    else:
-        continuing_list = dbx.files_list_folder( upload_loc)
+def file_copy_to_ssh(programName):
+    ssh_info = get_vault_configuration("ssh_odroid")
 
-    files = [_file.path_lower for _file in continuing_list.entries]
-    if continuing_list.has_more:
-        files.extend(get_file_names_to_move(continuing_list.cursor))
-    return files
-    """
-    continuing_list = dbx_variable.files_list_folder(from_folder)
-    files = [_file.path_lower for _file in continuing_list.entries if date_str_variable[:10] not in _file.name]
-    if continuing_list.has_more:
-        files.extend(get_file_names_to_move(continuing_list.cursor, date_str_variable, dbx_variable))
-    return files
+    ssh_ip = ssh_info['ssh_ip']
+    ssh_id = ssh_info['ssh_id']
+    ssh_pass = ssh_info['ssh_pass']
 
 
-def get_file_names_to_2weekago(from_folder, dbx_variable, date_str_variable):
-    continuing_list = dbx_variable.files_list_folder(from_folder)
-    days_14_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
-    days_14_ago_str = days_14_ago.strftime("%Y-%m-%d")
-    files = [_file.path_lower for _file in continuing_list.entries if days_14_ago_str > _file.name]
-    if continuing_list.has_more:
-        files.extend(get_file_names_to_move(continuing_list.cursor, date_str_variable, dbx_variable))
-    return files
+    import paramiko
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(ssh_ip, username=ssh_id, password=ssh_pass)
+    print("file_copy_to_ssh start")
+    sftp = ssh.open_sftp()
+    sftp.put(programName, "/mnt/backup/ebs_radio_mp3/"+programName)
+    sftp.close()
+    ssh.close()
+    os.remove(programName)
+    print("end start")
 
 
-def upload_to_dropbox(dbx_variable, upload_loc_var, date_str_variable, move_loc_var, program_name_var,current_loc_var):
-    # checking status
-    print(dbx_variable.users_get_current_account())
-
-    filelist = get_file_names_to_move(upload_loc_var, date_str_variable, dbx_variable)
-    print(filelist)
-    # need to no duplicate folder name
-    for x in filelist:
-        print(x, x.replace(upload_loc_var, move_loc_var))
-    relocation_paths = [dropbox.files.RelocationPath(x, x.replace(upload_loc_var, move_loc_var)) for x in filelist]
-    print(relocation_paths)
-    move_and_wait_until_complete(relocation_paths, dbx_variable)
-
-    mp3_file = date_str_variable + '_' + program_name_var + '.mp3'
-
-    with open(current_loc_var + mp3_file, 'rb') as f:
-        dbx_variable.files_upload(f.read(), upload_loc_var + '/' + mp3_file, mode=dropbox.files.WriteMode.overwrite)
-
-    import os
-    os.system("mkdir " + current_loc_var + "past/" + date_str_variable)
-    os.system("mv " + current_loc_var + mp3_file + " " + current_loc_var + "past/" + date_str_variable + "/" + mp3_file)
-
-    delete_filelist = get_file_names_to_2weekago(move_loc_var, dbx_variable, date_str_variable)
-
-    print(delete_filelist)
-    for path in delete_filelist:
-        dbx_variable.files_delete(path)
 
 import requests
 import os
-def get_vault_configuration():
+def get_vault_configuration(endpoint):
     vault_addr = os.environ.get("VAULT_ADDR")
     vault_token = os.environ.get("VAULT_TOKEN")
-    endpoint = f"{vault_addr}/v1/kv/data/ebs_radio"
+    endpoint = f"{vault_addr}/v1/kv/data/{endpoint}"
 
     # HTTP GET 요청을 통해 데이터를 가져옵니다.
     headers = {"X-Vault-Token": vault_token}
@@ -117,28 +50,71 @@ def get_vault_configuration():
 
     if response.status_code == 200:
         data = response.json()
-        return data
+        return data['data']['data']
+
     else:
         # 에러 응답의 경우 예외를 발생시킵니다.
         response.raise_for_status()
 
+
 def recording(date_str_variable):
-    
-    """
-    ori_file = current_loc_var + date_str_variable + '_' + program_name
-    mp3_file = current_loc_var + date_str_variable + '_' + program_name + '.mp3'
+    import subprocess
+    vault_data = get_vault_configuration('ebs_radio')
+    date_str = date_str_variable[:10]
+    time_str = date_str_variable[11:]
 
-    rtmpdump = ['rtmpdump', '-r', radio_addr, '-B', record_mins, '-o', ori_file]
-    ffmpeg = ['ffmpeg', '-i', ori_file, '-vn', '-acodec', 'copy', mp3_file]
-    rm = ['rm', '-rf', ori_file]
+    url = vault_data['ebs_url']
 
-    p = subprocess.Popen(rtmpdump)
-    p.communicate()
-    p = subprocess.Popen(ffmpeg)
-    p.communicate()
-    p = subprocess.Popen(rm)
-    p.communicate()
-    """
+    program_name = vault_data[time_str.replace(":","")]['name']
+    logger.info(f"{date_str_variable}_{program_name}.mp3 recording")
+    output_file = f"{date_str_variable}_{program_name}.mp3"
+    duration = int(vault_data['duration']) * 60    # 녹음 시간
+    ffmpeg_cmd = f"ffmpeg  -i {url} -t {duration} -y  {output_file}"
+    subprocess.call(ffmpeg_cmd, shell=True)
+
+    return f"{date_str_variable}_{program_name}.mp3"
+
+import pathlib
+def upload_to_dropbox(programName,TOKEN):
+    upload_location = "/ebs_today"
+
+    dropBox = dropbox.Dropbox(TOKEN)
+    fileName = pathlib.Path(".") / programName
+
+    with fileName.open("rb") as f:
+        meta = dropBox.files_upload(f.read(), upload_location+"/"+programName, mode=dropbox.files.WriteMode("overwrite"))
+
+def move_past_file(programName,TOKEN):
+    from_path = "/ebs_today"
+    to_path = "/ebs_past"
+    dateName = programName.split("_")[0]
+    title = "_".join(programName.split("_")[2:]).replace(".mp3","")
+    logger.debug("today standard ","dateName",dateName,"title",title)
+    dropBox = dropbox.Dropbox(TOKEN)
+
+    fileNameList = [x.name for x in dropBox.files_list_folder(from_path).entries]
+    fileNameList = [x for x in fileNameList if x<dateName and title in x]
+    for fileName in fileNameList:
+        dropBox.files_move_v2(from_path+"/"+fileName,to_path+"/"+fileName)
+        logger.debug("fileName ",fileName," moved")
+
+def delete_2week_ago_past_file(programName,TOKEN):
+    from datetime import datetime, timedelta
+    delete_path = "/ebs_past"
+    dateName = programName.split("_")[0] #2024-03-01
+    week2ago_dateName = (datetime.strptime(dateName, "%Y-%m-%d") - timedelta(weeks=2)).strftime("%Y-%m-%d")
+
+    title = "_".join(programName.split("_")[2:]).replace(".mp3","")
+    logger.debug("delete standard ","dateName",dateName,"week2ago_dateName", week2ago_dateName,"title",title)
+    dropBox = dropbox.Dropbox(TOKEN)
+
+    fileNameList = [x.name for x in dropBox.files_list_folder(delete_path).entries]
+    logger.debug("fileNameList before",fileNameList)
+    fileNameList = [x for x in fileNameList if x < dateName and title in x and  x > week2ago_dateName]
+    logger.debug("fileNameList after",fileNameList)
+    for fileName in fileNameList:
+        dropBox.files_delete_v2(delete_path+"/"+fileName)
+        logger.debug("fileName ",fileName," deleted")
 
 
 if __name__ == "__main__":
@@ -158,39 +134,36 @@ if __name__ == "__main__":
     arg_parser.add_argument('start_time_str', type=str, default=date_str,
                             help="trigger time ")
     args = arg_parser.parse_args()
-    recording(date_str)
+    logger.debug("arg",args)
 
+    programName = recording(date_str)
+    logger.debug("programName",programName)
 
-    """
-    date = datetime.datetime.now()
+    dropbox_kv = get_vault_configuration('dropbox')
+    APP_KEY = dropbox_kv['APP_KEY']
+    APP_SECRET = dropbox_kv['APP_SECRET']
+    refresh_token = dropbox_kv['refresh_token']
 
-    date_str = date.strftime('%Y-%m-%d_%H:%M')
+    url = "https://api.dropbox.com/oauth2/token"
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": APP_KEY,
+        "client_secret": APP_SECRET,
+    }
 
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument('radio_channel', type=str, default="ebs_fm",
-                           help="Which channel do you want to record?")
+    response = requests.post(url, headers=headers, data=data)
+    import json
+    DROPBOX_TOKEN = json.loads(response.text)['access_token']
+    logger.debug("get dropbbox token done")
 
-    argparser.add_argument('duration', type=int, default=20,
-                           help="What is the second number?")
+    upload_to_dropbox(programName,DROPBOX_TOKEN)
+    logger.debug("upload to dropbbox done")
 
-    argparser.add_argument('current_loc', type=str, default="~/",
-                           help="What is the current folder")
+    move_past_file(programName,DROPBOX_TOKEN)
+    logger.debug("move from today to past on dropbbox done")
 
-    args = argparser.parse_args()
+    delete_2week_ago_past_file(programName,DROPBOX_TOKEN)
+    logger.debug("delete 2 week ago file on dropbbox done")
 
-    current_loc = args.current_loc
-    program_name = args.program_name
-    record_mins = str(args.duration)
-
-    configparser = ConfigParser()
-    configparser.read(current_loc + '.config')
-    api_token = configparser.get('dropbox', 'api_token')
-    upload_loc = configparser.get('dropbox', 'upload_loc')
-    move_loc = configparser.get('dropbox', 'move_loc')
-
-    radio_address = configparser.get('ebs_address', args.radio_channel)
-
-    dbx = dropbox.Dropbox(api_token)
-    recording(date_str,current_loc)
-    upload_to_dropbox(dbx, upload_loc, date_str, move_loc, program_name,current_loc)
-    """
