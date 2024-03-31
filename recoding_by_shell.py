@@ -27,13 +27,13 @@ def file_copy_to_ssh(programName):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(ssh_ip, username=ssh_id, password=ssh_pass)
-    print("file_copy_to_ssh start")
+    logger.info("file_copy_to_ssh start")
     sftp = ssh.open_sftp()
     sftp.put(programName, "/mnt/backup/ebs_radio_mp3/"+programName)
     sftp.close()
     ssh.close()
     os.remove(programName)
-    print("end start")
+    logger.info("end start")
 
 
 
@@ -131,12 +131,12 @@ if __name__ == "__main__":
     logger.info("ebs recording start")
 
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('start_time_str', type=str, default=date_str,
+    arg_parser.add_argument('--start_time_str', type=str, default=date_str,
                             help="trigger time ")
     args = arg_parser.parse_args()
     logger.debug("arg",args)
 
-    programName = recording(date_str)
+    programName = recording(args.start_time_str)
     logger.debug("programName",programName)
 
     dropbox_kv = get_vault_configuration('dropbox')
