@@ -89,14 +89,14 @@ def move_past_file(programName,TOKEN):
     to_path = "/ebs_past"
     dateName = programName.split("_")[0]
     title = "_".join(programName.split("_")[2:]).replace(".mp3","")
-    logger.debug("today standard ","dateName",dateName,"title",title)
+    logger.info("today standard ","dateName",dateName,"title",title)
     dropBox = dropbox.Dropbox(TOKEN)
 
     fileNameList = [x.name for x in dropBox.files_list_folder(from_path).entries]
     fileNameList = [x for x in fileNameList if x<dateName and title in x]
     for fileName in fileNameList:
         dropBox.files_move_v2(from_path+"/"+fileName,to_path+"/"+fileName)
-        logger.debug("fileName ",fileName," moved")
+        logger.info("fileName ",fileName," moved")
 
 def delete_2week_ago_past_file(programName,TOKEN):
     from datetime import datetime, timedelta
@@ -105,16 +105,16 @@ def delete_2week_ago_past_file(programName,TOKEN):
     week2ago_dateName = (datetime.strptime(dateName, "%Y-%m-%d") - timedelta(weeks=2)).strftime("%Y-%m-%d")
 
     title = "_".join(programName.split("_")[2:]).replace(".mp3","")
-    logger.debug("delete standard ","dateName",dateName,"week2ago_dateName", week2ago_dateName,"title",title)
+    logger.info("delete standard ","dateName",dateName,"week2ago_dateName", week2ago_dateName,"title",title)
     dropBox = dropbox.Dropbox(TOKEN)
 
     fileNameList = [x.name for x in dropBox.files_list_folder(delete_path).entries]
-    logger.debug("fileNameList before",fileNameList)
+    logger.info("fileNameList before",fileNameList)
     fileNameList = [x for x in fileNameList if x < dateName and title in x and  x > week2ago_dateName]
-    logger.debug("fileNameList after",fileNameList)
+    logger.info("fileNameList after",fileNameList)
     for fileName in fileNameList:
         dropBox.files_delete_v2(delete_path+"/"+fileName)
-        logger.debug("fileName ",fileName," deleted")
+        logger.info("fileName ",fileName," deleted")
 
 
 if __name__ == "__main__":
@@ -134,10 +134,10 @@ if __name__ == "__main__":
     arg_parser.add_argument('--start_time_str', type=str, default=date_str,
                             help="trigger time ")
     args = arg_parser.parse_args()
-    logger.debug("arg",args)
+    logger.info("arg",args)
 
     programName = recording(args.start_time_str)
-    logger.debug("programName",programName)
+    logger.info("programName",programName)
 
     dropbox_kv = get_vault_configuration('dropbox')
     APP_KEY = dropbox_kv['APP_KEY']
@@ -156,14 +156,17 @@ if __name__ == "__main__":
     response = requests.post(url, headers=headers, data=data)
     import json
     DROPBOX_TOKEN = json.loads(response.text)['access_token']
-    logger.debug("get dropbbox token done")
+    logger.info("get dropbbox token done")
 
     upload_to_dropbox(programName,DROPBOX_TOKEN)
-    logger.debug("upload to dropbbox done")
+    logger.info("upload to dropbbox done")
+    
+    file_copy_to_ssh(programName)
+    logger.info("file copy to backup done")
 
     move_past_file(programName,DROPBOX_TOKEN)
-    logger.debug("move from today to past on dropbbox done")
+    logger.info("move from today to past on dropbbox done")
 
     delete_2week_ago_past_file(programName,DROPBOX_TOKEN)
-    logger.debug("delete 2 week ago file on dropbbox done")
+    logger.info("delete 2 week ago file on dropbbox done")
 
