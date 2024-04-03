@@ -9,16 +9,16 @@ import logging
 
 logger = logging.getLogger(name='ebs recording')
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('|%(asctime)s||%(name)s||%(levelname)s|\n%(message)s',datefmt='%Y-%m-%d %H:%M:%S') 
+formatter = logging.Formatter('|%(asctime)s||%(name)s||%(levelname)s|%(message)s',datefmt='%Y-%m-%d %H:%M:%S') 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 
 def file_copy_to_ssh(programName):
-    ssh_info = get_vault_configuration("ssh_odroid")
+    ssh_info = get_vault_configuration("ssh")
 
-    ssh_ip = ssh_info['ssh_ip']
+    ssh_ip = ssh_info['ssh_ip']['odroid']
     ssh_id = ssh_info['ssh_id']
     ssh_pass = ssh_info['ssh_pass']
 
@@ -134,10 +134,10 @@ if __name__ == "__main__":
     arg_parser.add_argument('--start_time_str', type=str, default=date_str,
                             help="trigger time ")
     args = arg_parser.parse_args()
-    logger.info("arg",args)
+    logger.info("arg" + args)
 
     programName = recording(args.start_time_str)
-    logger.info("programName",programName)
+    logger.info("programName : "+programName)
 
     dropbox_kv = get_vault_configuration('dropbox')
     APP_KEY = dropbox_kv['APP_KEY']
