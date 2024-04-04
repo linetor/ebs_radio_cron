@@ -134,7 +134,7 @@ if __name__ == "__main__":
     arg_parser.add_argument('--start_time_str', type=str, default=date_str,
                             help="trigger time ")
     args = arg_parser.parse_args()
-    logger.info("arg" + args)
+    logger.info(f"arg : {{args.start_time_str}}" )
 
     programName = recording(args.start_time_str)
     logger.info("programName : "+programName)
