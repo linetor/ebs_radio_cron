@@ -89,7 +89,7 @@ def move_past_file(programName,TOKEN):
     to_path = "/ebs_past"
     dateName = programName.split("_")[0]
     title = "_".join(programName.split("_")[2:]).replace(".mp3","")
-    logger.info("today standard " + " dateName " + dateName + "title " + title)
+    logger.info("today standard " + " dateName " + dateName + " title " + title)
     dropBox = dropbox.Dropbox(TOKEN)
 
     fileNameList = [x.name for x in dropBox.files_list_folder(from_path).entries]
@@ -108,7 +108,7 @@ def delete_2week_ago_past_file(programName,TOKEN):
     logger.info("delete standard " + " dateName " + dateName + " week2ago_date Name " +  week2ago_dateName + " title " + title)
     dropBox = dropbox.Dropbox(TOKEN)
 
-    fileNameList = [x.name for x in dropBox.files_list_folder(delete_path).entries]
+    fileNameList = [x.name for x in dropBox.files_list_folder(delete_path).entries if title in x.name]
     logger.info("fileNameList before " + ",".join(fileNameList))
     fileNameList = [x for x in fileNameList if title in x and  x < week2ago_dateName]
     logger.info("fileNameList after " + ",".join(fileNameList))
