@@ -142,24 +142,20 @@ if __name__ == "__main__":
     dropbox_kv = get_vault_configuration('dropbox')
     APP_KEY = dropbox_kv['APP_KEY']
     APP_SECRET = dropbox_kv['APP_SECRET']
-    # refresh_token = dropbox_kv['refresh_token']
-    access_token = dropbox_kv['access_token']
+    refresh_token = dropbox_kv['refresh_token']
 
-    # 기존은 refresh token을 사용했는데, 먼가 이상해져서 access token으로 변경
-    # 만약 안되면, refresh token을 사용해야 됨
-    # url = "https://api.dropbox.com/oauth2/token"
-    # headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    # data = {
-    #     "grant_type": "refresh_token",
-    #     "refresh_token": refresh_token,
-    #     "client_id": APP_KEY,
-    #     "client_secret": APP_SECRET,
-    # }
+    url = "https://api.dropbox.com/oauth2/token"
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": APP_KEY,
+        "client_secret": APP_SECRET,
+    }
 
-    # response = requests.post(url, headers=headers, data=data)
+    response = requests.post(url, headers=headers, data=data)
     import json
-    # DROPBOX_TOKEN = json.loads(response.text)['access_token']
-    DROPBOX_TOKEN = access_token
+    DROPBOX_TOKEN = json.loads(response.text)['access_token']
     logger.info("get dropbbox token done")
 
     upload_to_dropbox(programName,DROPBOX_TOKEN)
